@@ -79,9 +79,9 @@ public class BeanInstanceInfoRestController {
             @RequestParam(value = "search", required = false) String search,
             @RequestParam(value = "pageNumber", defaultValue = "0") int pageNumber,
             @RequestParam(value = "pageSize", defaultValue = "10") int pageSize,
-            @RequestParam(value = "sortBy", defaultValue = "beanName") String sortBy,
+            @RequestParam(value = "sortBy", required = false) String sortBy,
             @RequestParam(value = "sortDir", defaultValue = "ASC") String sortDir) {
-        var sort = Sort.by(sortBy, sortDir);
+        var sort = sortBy == null ? Sort.unsorted() : Sort.by(sortBy, sortDir);
         var pageRequest = new PageRequest(
                 Math.max(pageNumber, 0),
                 Math.min(Math.max(pageSize, 1), MAX_PAGE_SIZE),
