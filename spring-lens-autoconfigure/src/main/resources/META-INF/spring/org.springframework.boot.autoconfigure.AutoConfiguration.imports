@@ -1,1 +1,2 @@
 com.sdlcpro.springlens.autoconfigure.bean.definition.SpringLensBeanDefinitionInfoAutoConfiguration
+com.sdlcpro.springlens.autoconfigure.bean.instance.SpringLensBeanInstanceInfoAutoConfiguration
