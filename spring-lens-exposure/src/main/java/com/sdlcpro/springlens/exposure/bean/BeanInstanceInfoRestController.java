@@ -2,6 +2,7 @@ package com.sdlcpro.springlens.exposure.bean;
 
 import com.sdlcpro.springlens.annotation.SpringLensEndpoint;
 import com.sdlcpro.springlens.annotation.SpringLensInternalComponent;
+import com.sdlcpro.springlens.exception.DataNotFoundException;
 import com.sdlcpro.springlens.exposure.ApiResponseHandler;
 import com.sdlcpro.springlens.model.bean.BeanInfoCompositeKey;
 import com.sdlcpro.springlens.query.PageRequest;
@@ -68,7 +69,7 @@ public class BeanInstanceInfoRestController {
      * @param sortDir    sorting direction, {@code ASC} or {@code DESC}; defaults
      *                   to {@code ASC}
      * @return an HTTP response containing the requested page of bean instance
-     *         records, wrapped by {@link ApiResponseHandler}
+     * records, wrapped by {@link ApiResponseHandler}
      */
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getBeanInstanceInfo(
@@ -113,7 +114,7 @@ public class BeanInstanceInfoRestController {
      * @param contextId the Spring application context identifier
      * @param beanName  the bean name within the application context
      * @return an HTTP response containing the matching record, or a standardized
-     *         {@code 404 Not Found} response when no record exists for the key
+     * {@code 404 Not Found} response when no record exists for the key
      */
     @GetMapping(value = "/find", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getBeanInstanceInfo(
@@ -126,4 +127,24 @@ public class BeanInstanceInfoRestController {
         );
     }
 
+    /**
+     * Returns single bean instance proxy information according to the given contextId and beanName
+     *
+     * @param contextId the Spring application context identifier
+     * @param beanName  the bean name within the application context
+     * @return {@link ResponseEntity} containing the
+     * {@link  com.sdlcpro.springlens.model.bean.instance.BeanInstanceProxyInfo) if found at repository
+     */
+    @GetMapping("/proxy-info")
+    public ResponseEntity<?> getBeanInstanceProxyInfo(
+            @RequestParam(value = "contextId") String contextId,
+            @RequestParam(value = "beanName") String beanName
+    ) {
+        return ApiResponseHandler.handle(() -> {
+            var key = new BeanInfoCompositeKey(contextId, beanName);
+            return this.beanInstanceInfoRepository.findProxyInfoById(key).orElseThrow(
+                    () -> new DataNotFoundException("Bean instance proxy information not found for " + key)
+            );
+        });
+    }
 }
