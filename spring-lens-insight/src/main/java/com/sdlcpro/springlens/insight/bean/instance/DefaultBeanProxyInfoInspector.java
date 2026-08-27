@@ -2,7 +2,7 @@ package com.sdlcpro.springlens.insight.bean.instance;
 
 import com.sdlcpro.springlens.annotation.SpringLensInternalComponent;
 import com.sdlcpro.springlens.insight.bean.BeanInfoUtils;
-import com.sdlcpro.springlens.inspector.BeanProxyInfoInspector;
+import com.sdlcpro.springlens.inspector.bean.BeanProxyInfoInspector;
 import com.sdlcpro.springlens.model.bean.ProxyType;
 import com.sdlcpro.springlens.model.bean.instance.BeanInstanceProxyInfo;
 import com.sdlcpro.springlens.util.Preconditions;
