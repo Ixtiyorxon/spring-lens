@@ -61,15 +61,15 @@ public final class BeanDefinitionInfoCollector implements SmartInitializingSingl
             this.collectBeanDefinitionInfoRecursively(context.getParent(), definitionInfos);
         }
 
+        String contextId = context.getId() == null ? ObjectUtils.identityToString(context) : context.getId();
         ConfigurableListableBeanFactory beanFactory = ((ConfigurableApplicationContext) context).getBeanFactory();
         String[] beanNames = beanFactory.getBeanDefinitionNames();
         for (var beanName : beanNames) {
-            this.getEligibleInfoOrEmpty(beanFactory, beanName).ifPresent(definitionInfos::add);
+            this.getEligibleInfoOrEmpty(beanFactory, contextId, beanName).ifPresent(definitionInfos::add);
         }
     }
 
-    private Optional<BeanDefinitionInfo> getEligibleInfoOrEmpty(ConfigurableListableBeanFactory beanFactory, String beanName) {
-        String contextId = context.getId() == null ? ObjectUtils.identityToString(context) : context.getId();
+    private Optional<BeanDefinitionInfo> getEligibleInfoOrEmpty(ConfigurableListableBeanFactory beanFactory, String contextId, String beanName) {
         try {
             if (this.isEligibleToCollectInfo(beanFactory, beanName)) {
                 var beanDefinitionInfo = createBeanDefinitionInfo(contextId, beanName, beanFactory);
