@@ -8,6 +8,8 @@ import com.sdlcpro.springlens.listener.bean.BeanDefinitionInfoCollectListener;
 import com.sdlcpro.springlens.matcher.CompositeMatcher;
 import com.sdlcpro.springlens.model.bean.definition.BeanDefinitionInfo;
 import com.sdlcpro.springlens.util.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -18,6 +20,7 @@ import org.springframework.util.ObjectUtils;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 import static com.sdlcpro.springlens.insight.bean.BeanInfoUtils.*;
 
@@ -27,6 +30,8 @@ import static com.sdlcpro.springlens.insight.bean.BeanInfoUtils.*;
  */
 @SpringLensInternalComponent
 public final class BeanDefinitionInfoCollector implements SmartInitializingSingleton {
+    private static final Logger logger = LoggerFactory.getLogger(BeanDefinitionInfoCollector.class);
+
     private final ApplicationContext context;
     private final ObjectProvider<BeanDefinitionInfoCollectListener> beanDefinitionInfoCollectListenerProvider;
     private final CompositeMatcher<BeanInfoCollectionContext> beanDefinitionCollectionMatcher;
@@ -56,18 +61,31 @@ public final class BeanDefinitionInfoCollector implements SmartInitializingSingl
             this.collectBeanDefinitionInfoRecursively(context.getParent(), definitionInfos);
         }
 
-        String contextId = context.getId() == null ? ObjectUtils.identityToString(context) : context.getId();
         ConfigurableListableBeanFactory beanFactory = ((ConfigurableApplicationContext) context).getBeanFactory();
         String[] beanNames = beanFactory.getBeanDefinitionNames();
         for (var beanName : beanNames) {
-            if (this.isEligibleToCollectInfo(beanName, beanFactory)) {
-                var beanDefinitionInfo = createBeanDefinitionInfo(contextId, beanName, beanFactory);
-                definitionInfos.add(beanDefinitionInfo);
-            }
+            this.getEligibleInfoOrEmpty(beanFactory, beanName).ifPresent(definitionInfos::add);
         }
     }
 
-    private boolean isEligibleToCollectInfo(String beanName, ConfigurableListableBeanFactory beanFactory) {
+    private Optional<BeanDefinitionInfo> getEligibleInfoOrEmpty(ConfigurableListableBeanFactory beanFactory, String beanName) {
+        String contextId = context.getId() == null ? ObjectUtils.identityToString(context) : context.getId();
+        try {
+            if (this.isEligibleToCollectInfo(beanFactory, beanName)) {
+                var beanDefinitionInfo = createBeanDefinitionInfo(contextId, beanName, beanFactory);
+                return Optional.of(beanDefinitionInfo);
+            }
+        } catch (Exception ex) {
+            logger.warn("Failed to collect the bean definition info for bean: '{}' in application context: '{}'",
+                    beanName,
+                    contextId
+            );
+        }
+
+        return Optional.empty();
+    }
+
+    private boolean isEligibleToCollectInfo(ConfigurableListableBeanFactory beanFactory, String beanName) {
         var beanDefContext = new BeanInfoCollectionContext(
                 resolveBeanRole(beanFactory, beanName),
                 () -> resolveBeanType(beanFactory, beanName),
