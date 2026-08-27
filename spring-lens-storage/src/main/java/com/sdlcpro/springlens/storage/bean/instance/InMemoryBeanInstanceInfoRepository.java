@@ -116,10 +116,7 @@ public class InMemoryBeanInstanceInfoRepository implements BeanInstanceInfoRepos
                         .formatted(SCOPE_SINGLETON, instanceInfo.scope()));
             }
 
-            return this.beanProxyInfoInspector.inspectBeanInstanceProxyInfo(
-                    instanceInfo.contextId(),
-                    instanceInfo.beanName()
-            );
+            return this.beanProxyInfoInspector.inspectBy(key);
         });
     }
 }
