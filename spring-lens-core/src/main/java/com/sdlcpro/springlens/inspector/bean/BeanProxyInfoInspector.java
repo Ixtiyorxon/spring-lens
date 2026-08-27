@@ -1,4 +1,4 @@
-package com.sdlcpro.springlens.inspector;
+package com.sdlcpro.springlens.inspector.bean;
 
 import com.sdlcpro.springlens.model.bean.instance.BeanInstanceProxyInfo;
 
