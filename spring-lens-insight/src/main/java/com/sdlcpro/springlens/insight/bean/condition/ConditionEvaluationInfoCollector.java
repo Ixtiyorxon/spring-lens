@@ -6,6 +6,8 @@ import com.sdlcpro.springlens.insight.util.SafeListenerInvoker;
 import com.sdlcpro.springlens.listener.bean.ConditionEvaluationInfoCollectListener;
 import com.sdlcpro.springlens.matcher.CompositeMatcher;
 import com.sdlcpro.springlens.model.bean.condition.ConditionEvaluationInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.context.ApplicationContext;
@@ -17,6 +19,7 @@ import java.util.Set;
 
 @SpringLensInternalComponent
 public class ConditionEvaluationInfoCollector implements SmartInitializingSingleton {
+    private static final Logger logger = LoggerFactory.getLogger(ConditionEvaluationInfoCollector.class);
     private static final String SPRING_LENS_BASE_PACKAGE = "com.sdlcpro.springlens.**";
 
     private final ApplicationContext context;
@@ -72,8 +75,18 @@ public class ConditionEvaluationInfoCollector implements SmartInitializingSingle
         }
 
         for (var gatheredInfo : this.conditionEvaluationInfoGatherer.gather(configurableApplicationContext)) {
-            if (this.isEligibleToCollectInfo(gatheredInfo.source())) {
-                conditionEvaluationInfos.add(gatheredInfo);
+            if (gatheredInfo != null) {
+                try {
+                    if (this.isEligibleToCollectInfo(gatheredInfo.source())) {
+                        conditionEvaluationInfos.add(gatheredInfo);
+                    }
+                } catch (Exception ex) {
+                    logger.debug("Filed to collect condition evaluation info for source '{}' in context '{}'",
+                            gatheredInfo.source(),
+                            gatheredInfo.contextId(),
+                            ex
+                    );
+                }
             }
         }
     }
