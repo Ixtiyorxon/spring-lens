@@ -5,6 +5,7 @@ import com.sdlcpro.springlens.insight.bean.BeanInfoCollectionContext;
 import com.sdlcpro.springlens.insight.bean.BeanInfoCollectorSettings;
 import com.sdlcpro.springlens.listener.bean.BeanInstanceInfoCollectListener;
 import com.sdlcpro.springlens.matcher.CompositeMatcher;
+import com.sdlcpro.springlens.model.bean.BeanRole;
 import com.sdlcpro.springlens.model.bean.instance.BeanInstanceInfo;
 import com.sdlcpro.springlens.time.AnchoredClock;
 import com.sdlcpro.springlens.util.Preconditions;
@@ -66,8 +67,12 @@ public final class BeanInstanceInfoCollector implements BeanPostProcessor {
     }
 
     private boolean isEligibleToCollectInfo(Object bean, String beanName) {
+        BeanRole beanRole = context.containsBeanDefinition(beanName)
+                ? resolveBeanRole(context.getBeanFactory(), beanName)
+                : BeanRole.UNKNOWN;
+
         var beanInstanceContext = new BeanInfoCollectionContext(
-                resolveBeanRole(context.getBeanFactory(), beanName),
+                beanRole,
                 () -> resolveRuntimeBeanType(bean),
                 () -> resolveRuntimeClass(bean)
         );
@@ -78,11 +83,15 @@ public final class BeanInstanceInfoCollector implements BeanPostProcessor {
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
         try {
+            boolean hasDefinition = context.containsBeanDefinition(beanName);
+            String scope = hasDefinition ? resolveBeanScope(this.context.getBeanFactory(), beanName) : "unknown";
+
             if (this.isEligibleToCollectInfo(bean, beanName)) {
                 String key = beanNamePrefix.concat(beanName);
                 var builder = BeanInstanceInfoBuilder.init(this.contextId, beanName)
                         .type(resolveRuntimeBeanType(bean))
-                        .scope(resolveBeanScope(this.context.getBeanFactory(), beanName));
+                        .scope(scope)
+                        .hasDefinition(hasDefinition);
 
                 this.beanInstanceInfoBuilderMap.put(key, builder);
             }
@@ -137,6 +146,7 @@ public final class BeanInstanceInfoCollector implements BeanPostProcessor {
         private final AnchoredClock clock;
         private String type;
         private String scope;
+        private boolean hasDefinition;
 
         private BeanInstanceInfoBuilder(String contextId, String beanName) {
             this.contextId = contextId;
@@ -158,14 +168,20 @@ public final class BeanInstanceInfoCollector implements BeanPostProcessor {
             return this;
         }
 
+        public BeanInstanceInfoBuilder hasDefinition(boolean hasDefinition) {
+            this.hasDefinition = hasDefinition;
+            return this;
+        }
+
         public BeanInstanceInfo build() {
             Instant createdAt = this.clock.getStartTime();
             long initDurationNanos = this.clock.getElapsedNanos();
             return new BeanInstanceInfo(
-                    contextId,
-                    beanName,
-                    type,
-                    scope,
+                    this.contextId,
+                    this.beanName,
+                    this.type,
+                    this.scope,
+                    this.hasDefinition,
                     createdAt,
                     initDurationNanos
             );
