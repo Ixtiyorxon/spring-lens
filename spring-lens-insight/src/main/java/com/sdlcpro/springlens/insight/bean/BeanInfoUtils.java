@@ -12,12 +12,15 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 
+import java.util.Set;
+
 /**
  * Utility methods for inspecting Spring bean metadata, resolving runtime
  * class details, mapping Spring bean roles, and determining whether a
  * given bean is an internal SpringLens framework component.
  */
 public final class BeanInfoUtils {
+    private static final String SPRING_FRAMEWORK_BASE_PACKAGE = "org.springframework.**";
 
     private BeanInfoUtils() {
         throw new UnsupportedOperationException("The BeanInfoUtils is an utility class and cannot be instantiated");
@@ -138,6 +141,10 @@ public final class BeanInfoUtils {
 
         if (!settings.includeToolInternal()) {
             matcher.addExcludeMatcher(new ToolInternalComponentMatcher<>());
+        }
+
+        if (!settings.includeFrameworkInternal()) {
+            matcher.addExcludeMatcher(new PackageMatcher<>(Set.of(SPRING_FRAMEWORK_BASE_PACKAGE)));
         }
 
         return matcher;

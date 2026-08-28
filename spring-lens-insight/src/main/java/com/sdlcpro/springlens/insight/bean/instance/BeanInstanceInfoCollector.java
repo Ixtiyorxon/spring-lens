@@ -28,6 +28,7 @@ public final class BeanInstanceInfoCollector implements BeanPostProcessor {
 
     private static final String INCLUDE_ROLE_INFRA_PROPERTY = "spring.lens.bean.include.role-infra";
     private static final String INCLUDE_TOOL_INTERNAL_PROPERTY = "spring.lens.bean.include.tool-internal";
+    private static final String INCLUDE_FRAMEWORK_INTERNAL_PROPERTY = "spring.lens.bean.include.framework-internal";
     private static final String EXCLUDE_PACKAGE_PATTERN_PROPERTY = "spring.lens.bean.exclude.package-patterns";
     private static final String EXCLUDE_CLASSES_PROPERTY = "spring.lens.bean.exclude.classes";
     private static final BeanInstanceInfoEventStream BEAN_INSTANCE_INFO_EVENT_STREAM;
@@ -55,9 +56,10 @@ public final class BeanInstanceInfoCollector implements BeanPostProcessor {
         try {
             boolean includeInfraRole = env.getProperty(INCLUDE_ROLE_INFRA_PROPERTY, boolean.class, false);
             boolean includeToolInternal = env.getProperty(INCLUDE_TOOL_INTERNAL_PROPERTY, boolean.class, false);
+            boolean includeFrameworkInternal = env.getProperty(INCLUDE_FRAMEWORK_INTERNAL_PROPERTY, boolean.class, false);
             Set<String> excludePackagePattern = env.getProperty(EXCLUDE_PACKAGE_PATTERN_PROPERTY, Set.class, Set.of());
             Set<String> excludeClasses = env.getProperty(EXCLUDE_CLASSES_PROPERTY, Set.class, Set.of());
-            return new BeanInfoCollectorSettings(includeInfraRole, includeToolInternal, excludePackagePattern, excludeClasses);
+            return new BeanInfoCollectorSettings(includeInfraRole, includeToolInternal, includeFrameworkInternal, excludePackagePattern, excludeClasses);
         } catch (Exception ex) {
             throw new IllegalArgumentException("Invalid property value found to instantiate BeanInfoCollectorSettings", ex);
         }
