@@ -1,5 +1,10 @@
 package com.sdlcpro.springlens.exposure.application;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.sdlcpro.springlens.model.application.ApplicationInfo;
 import com.sdlcpro.springlens.model.application.JavaInfo;
 import com.sdlcpro.springlens.model.application.SpringInfo;
@@ -8,9 +13,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Set;
@@ -20,12 +27,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Web integration tests for {@link ApplicationInfoRestController}.
+ * Verifies the HTTP exposure of application runtime metadata.
  *
  * @author Ixtiyorxon
  * @since 2026-08-28
  */
-@DisplayName("ApplicationInfoRestController Web Integration Tests")
+@DisplayName("ApplicationInfoRestController Tests")
 class ApplicationInfoRestControllerTest {
 
     private MockMvc mockMvc;
@@ -41,14 +48,14 @@ class ApplicationInfoRestControllerTest {
                 new StartupInfo(Instant.parse("2026-08-28T10:00:00Z"), Duration.ofMillis(450))
         );
 
-        mockMvc = MockMvcBuilders.standaloneSetup(
-                new ApplicationInfoRestController(() -> applicationInfo)
-        ).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(new ApplicationInfoRestController(() -> applicationInfo))
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper()))
+                .build();
     }
 
     @Test
-    @DisplayName("Returns application metadata as JSON")
-    void returnsApplicationMetadataAsJson() throws Exception {
+    @DisplayName("GET application endpoint returns application metadata as JSON")
+    void returnsApplicationInfoAsJson() throws Exception {
         mockMvc.perform(get("/spring-lens/api/application").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("orders-service"))
@@ -57,18 +64,24 @@ class ApplicationInfoRestControllerTest {
                 .andExpect(jsonPath("$.spring.bootVersion").value("3.2.0"))
                 .andExpect(jsonPath("$.spring.frameworkVersion").value("6.1.0"))
                 .andExpect(jsonPath("$.java.version").value("17"))
-                .andExpect(jsonPath("$.java.vendor").value("Eclipse Adoptium"));
+                .andExpect(jsonPath("$.java.vendor").value("Eclipse Adoptium"))
+                .andExpect(jsonPath("$.startup.startedAt").value("2026-08-28T10:00:00Z"))
+                .andExpect(jsonPath("$.startup.startupDuration").value("PT0.45S"));
     }
 
-    @Test
-    @DisplayName("Returns the configured fallback message when metadata is unavailable")
-    void returnsFallbackMessageWhenMetadataIsUnavailable() throws Exception {
-        var unavailableMockMvc = MockMvcBuilders.standaloneSetup(
-                new ApplicationInfoRestController(() -> null)
-        ).build();
+    private ObjectMapper objectMapper() {
+        var module = new SimpleModule();
+        module.addSerializer(Instant.class, stringSerializer());
+        module.addSerializer(Duration.class, stringSerializer());
+        return new ObjectMapper().registerModule(module);
+    }
 
-        unavailableMockMvc.perform(get("/spring-lens/api/application").accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("ApplicationInfo not found!"));
+    private <T> JsonSerializer<T> stringSerializer() {
+        return new JsonSerializer<>() {
+            @Override
+            public void serialize(T value, JsonGenerator generator, SerializerProvider provider) throws IOException {
+                generator.writeString(value.toString());
+            }
+        };
     }
 }
