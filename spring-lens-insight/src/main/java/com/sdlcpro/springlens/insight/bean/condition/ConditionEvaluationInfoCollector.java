@@ -17,10 +17,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import static com.sdlcpro.springlens.constant.SpringLensConstants.SPRING_LENS_BASE_PACKAGE_PATTERN;
+
 @SpringLensInternalComponent
 public class ConditionEvaluationInfoCollector implements SmartInitializingSingleton {
     private static final Logger logger = LoggerFactory.getLogger(ConditionEvaluationInfoCollector.class);
-    private static final String SPRING_LENS_BASE_PACKAGE = "com.sdlcpro.springlens.**";
 
     private final ApplicationContext context;
     private final ConditionEvaluationInfoGatherer conditionEvaluationInfoGatherer;
@@ -43,7 +44,7 @@ public class ConditionEvaluationInfoCollector implements SmartInitializingSingle
         var matcher = new CompositeMatcher<ConditionEvaluationCollectionContext>();
         matcher.addExcludeMatcher(new PackageMatcher<>(settings.excludePackagePatterns()));
         if (!settings.includeToolInternal()) {
-            matcher.addExcludeMatcher(new PackageMatcher<>(Set.of(SPRING_LENS_BASE_PACKAGE)));
+            matcher.addExcludeMatcher(new PackageMatcher<>(Set.of(SPRING_LENS_BASE_PACKAGE_PATTERN)));
         }
 
         return matcher;
